@@ -16,10 +16,11 @@ import (
 
 const (
 	sendTmpl = `
-Airline: {{.AirCompany}} {{.From}} -> {{.To}} 机票检测
+Airline: {{.From}} -> {{.To}} 机票检测
 
 机票:
 {{range .Tickets}}---------------------------------
+航空公司: {{.AirCompany}}
 航班号: {{.FlightNo}}
 出发时间: {{.DepTime}}
 到达时间: {{.ArrTime}}
@@ -59,15 +60,15 @@ func NewSpiderWorker(opts *Options) *SpiderWorker {
 	}
 }
 
-func (s *SpiderWorker) crawlGroup() map[domains.AirCompany][]*configs.Rule {
-	group := make(map[domains.AirCompany][]*configs.Rule)
+func (s *SpiderWorker) crawlGroup() map[domains.SpiderSource][]*configs.Rule {
+	group := make(map[domains.SpiderSource][]*configs.Rule)
 	for _, rule := range s.opts.crawlRules {
-		group[rule.AirCompany] = append(group[rule.AirCompany], rule)
+		group[rule.Source] = append(group[rule.Source], rule)
 	}
 	return group
 }
 
-func (s *SpiderWorker) generateSendMsg(ac domains.AirCompany, rule *configs.Rule, resp []*models.AirTicket) ([]byte, error) {
+func (s *SpiderWorker) generateSendMsg(ac domains.SpiderSource, rule *configs.Rule, resp []*models.AirTicket) ([]byte, error) {
 	tmpl, err := template.New("test").Parse(sendTmpl)
 	if err != nil {
 		panic(err)
@@ -94,7 +95,7 @@ func (s *SpiderWorker) generateSendMsg(ac domains.AirCompany, rule *configs.Rule
 	return buf.Bytes(), nil
 }
 
-func (s *SpiderWorker) doCrawl(ctx context.Context, ac domains.AirCompany, rules []*configs.Rule) func() error {
+func (s *SpiderWorker) doCrawl(ctx context.Context, ac domains.SpiderSource, rules []*configs.Rule) func() error {
 	return func() error {
 		for _, rule := range rules {
 			select {
@@ -104,7 +105,13 @@ func (s *SpiderWorker) doCrawl(ctx context.Context, ac domains.AirCompany, rules
 			}
 
 			cc := plog.With(ctx, "From", rule.From, "To", rule.To)
-			resp, err := s.opts.spiderFactory.Crawl(cc, ac, rule.Date, rule.From, rule.To)
+			crawlRule, err := rule.CrawlRule()
+			if err != nil {
+				plog.Errorc(cc, "crawlRule error: %v", err)
+				continue
+			}
+
+			resp, err := s.opts.spiderFactory.Crawl(cc, ac, crawlRule)
 			if err != nil {
 				plog.Errorc(cc, "do crawl of %v %v -> %v error: %v", ac, rule.From, rule.To, err)
 				continue
@@ -137,7 +144,7 @@ func (s *SpiderWorker) Run(ctx context.Context) error {
 	for ac, rules := range spiderGroup {
 		ac := ac
 		rules := rules
-		c := plog.With(ctx, "AirCompany", ac.String())
+		c := plog.With(ctx, "Source", ac.String())
 		grp.Go(s.doCrawl(c, ac, rules))
 	}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/superwhys/air-ticket/pkg/email"
 	"github.com/superwhys/air-ticket/pkg/spiders"
 	nanhang "github.com/superwhys/air-ticket/pkg/spiders/nan_hang"
+	"github.com/superwhys/air-ticket/pkg/spiders/wingworld"
 	"github.com/superwhys/air-ticket/pkg/worker"
 )
 
@@ -29,7 +30,10 @@ func main() {
 	plog.Infof("Crawling rules: %v", plog.JsonifyNoIndent(rules))
 
 	gmailSender := email.NewGmailSender(emailConf)
-	spiderFactory := spiders.RegisterSpider(&nanhang.NanHangSpiderFactory{})
+	spiderFactory := spiders.RegisterSpider(
+		&nanhang.NanHangSpiderFactory{},
+		&wingworld.WingWorldSpiderFactory{},
+	)
 
 	spiderOpt := worker.NewOptions(
 		spiderFactory,
@@ -40,8 +44,8 @@ func main() {
 	spiderWorker := worker.NewSpiderWorker(spiderOpt)
 
 	c := cores.NewPuzzleCore(
-		// cores.WithWorker(spiderWorker.Run),
-		cores.WithCronWorker(crawlCron(), spiderWorker.Run),
+		cores.WithWorker(spiderWorker.Run),
+		// cores.WithCronWorker(crawlCron(), spiderWorker.Run),
 	)
 
 	plog.PanicError(cores.Run(c))

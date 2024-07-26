@@ -76,7 +76,7 @@ func (s *NanHangSpider) getJsonData(date, from, to string) map[string]any {
 	}
 }
 
-func (s *NanHangSpider) parseResp(resp []byte) ([]*models.AirTicket, error) {
+func (s *NanHangSpider) ParseResp(resp []byte, rule *domains.CrawlRule) ([]*models.AirTicket, error) {
 	// ["data"]["segment"][0]["dateFlight"]["transitFlight"]
 	transitFlight := gjson.GetBytes(resp, "data.segment.0.dateFlight.transitFlight").String()
 	flights := []*TransitFlight{}
@@ -89,19 +89,25 @@ func (s *NanHangSpider) parseResp(resp []byte) ([]*models.AirTicket, error) {
 		segments := flight.Segments
 
 		lastIdx := len(segments) - 1
-		ticket := &models.AirTicket{
-			FlightNo: segments[0].FlightNo,
-			DepTime:  segments[0].DepTime,
-			ArrTime:  segments[lastIdx].ArrTime,
-		}
-
+		depTime := segments[0].DepTime
+		arrTime := segments[lastIdx].ArrTime
 		depComp := fmt.Sprintf("%s%s", segments[0].DepDate, segments[0].DepTime)
 		arrComp := fmt.Sprintf("%s%s", segments[lastIdx].DepDate, segments[lastIdx].DepTime)
-
 		depDatetime, err := time.Parse("200601021504", depComp)
 		arrDatetime, err := time.Parse("200601021504", arrComp)
 		if err != nil {
-			return nil, err
+			continue
+		}
+
+		if rule.TickerFilter(depDatetime, arrDatetime) {
+			continue
+		}
+
+		ticket := &models.AirTicket{
+			AirCompany: domains.NANHANG.String(),
+			FlightNo:   segments[0].FlightNo,
+			DepTime:    depTime,
+			ArrTime:    arrTime,
 		}
 
 		ticket.Duration = fmt.Sprintf("%.2fh", arrDatetime.Sub(depDatetime).Hours())
@@ -112,9 +118,9 @@ func (s *NanHangSpider) parseResp(resp []byte) ([]*models.AirTicket, error) {
 	return tickets, nil
 }
 
-func (s *NanHangSpider) Crawl(ctx context.Context, date, from, to string) ([]*models.AirTicket, error) {
-	headers := s.getHeader(date, from, to)
-	data := s.getJsonData(date, from, to)
+func (s *NanHangSpider) Crawl(ctx context.Context, rule *domains.CrawlRule) ([]byte, error) {
+	headers := s.getHeader(rule.Date, rule.From, rule.To)
+	data := s.getJsonData(rule.Date, rule.From, rule.To)
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -136,17 +142,12 @@ func (s *NanHangSpider) Crawl(ctx context.Context, date, from, to string) ([]*mo
 	}
 	defer resp.Body.Close()
 
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.parseResp(b)
+	return io.ReadAll(resp.Body)
 }
 
 type NanHangSpiderFactory struct{}
 
-func (f *NanHangSpiderFactory) AirCompany() domains.AirCompany {
+func (f *NanHangSpiderFactory) Source() domains.SpiderSource {
 	return domains.NANHANG
 }
 

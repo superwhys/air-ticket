@@ -1,6 +1,8 @@
 package models
 
 type AirTicket struct {
+	// 航空公司
+	AirCompany string `json:"airCompany"`
 	// 航班号
 	FlightNo string `json:"flightNo"`
 	// 出发时间

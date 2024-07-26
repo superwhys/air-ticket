@@ -3,9 +3,11 @@ module github.com/superwhys/air-ticket
 go 1.22.0
 
 require (
-	github.com/go-puzzles/cores v1.0.7
-	github.com/go-puzzles/pflags v1.0.2
-	github.com/go-puzzles/plog v1.0.5
+	github.com/go-puzzles/cores v1.0.8
+	github.com/go-puzzles/pflags v1.0.3
+	github.com/go-puzzles/plog v1.0.6
+	github.com/pkg/errors v0.9.1
+	github.com/tidwall/gjson v1.17.1
 	golang.org/x/sync v0.7.0
 )
 
@@ -31,7 +33,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
@@ -42,7 +43,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.19.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/tidwall/gjson v1.17.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

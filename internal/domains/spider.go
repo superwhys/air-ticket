@@ -2,31 +2,45 @@ package domains
 
 import (
 	"context"
+	"time"
 
 	"github.com/superwhys/air-ticket/models"
 )
 
-type AirCompany string
+type SpiderSource string
 
 const (
-	NANHANG = "南航"
+	NANHANG   SpiderSource = "南航"
+	WORLDWING SpiderSource = "WorldWing"
 )
 
-func (c AirCompany) String() string {
+func (c SpiderSource) String() string {
 	return string(c)
 }
 
-var (
-	AirCompanies = map[string]AirCompany{
-		"南航": NANHANG,
+type CrawlRule struct {
+	Date string
+	From string
+	To   string
+	// StartTime and EndTime use to filter the ticket which not in StartTime and EndTime range
+	StartTime time.Time
+	EndTime   time.Time
+}
+
+func (r *CrawlRule) TickerFilter(dep, arr time.Time) bool {
+	if r.StartTime.After(dep) || r.EndTime.Before(arr) {
+		return true
 	}
-)
+
+	return false
+}
 
 type AirTicketSpider interface {
-	Crawl(ctx context.Context, date, from, to string) ([]*models.AirTicket, error)
+	Crawl(ctx context.Context, rule *CrawlRule) ([]byte, error)
+	ParseResp(resp []byte, rule *CrawlRule) ([]*models.AirTicket, error)
 }
 
 type SpiderFactory interface {
-	AirCompany() AirCompany
+	Source() SpiderSource
 	NewAirTickerSpider() AirTicketSpider
 }
