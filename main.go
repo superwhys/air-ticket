@@ -44,8 +44,8 @@ func main() {
 	spiderWorker := worker.NewSpiderWorker(spiderOpt)
 
 	c := cores.NewPuzzleCore(
-		cores.WithNameWorker("SpiderWorker", spiderWorker.Run),
-		// cores.WithCronWorker(crawlCron(), spiderWorker.Run),
+		// cores.WithNameWorker("SpiderWorker", spiderWorker.Run),
+		cores.WithCronWorker(crawlCron(), spiderWorker.Run),
 	)
 
 	plog.PanicError(cores.Run(c))

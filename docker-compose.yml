@@ -1,10 +1,12 @@
 version: '3.8'
 services:
-  auth:
+  air-ticket:
     build: .
     image: registry.gitlab.hoven.com/core/auth:latest
     restart: always
     container_name: air-ticket 
+    volumes:
+      - ${BASE_PATH:-./}/conf:/app/conf
     logging:
       options:
         max-size: 100m

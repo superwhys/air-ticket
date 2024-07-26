@@ -1,9 +1,9 @@
 # builder
-FROM golang:alpine3.18 as builder
+FROM golang:1.22.4-alpine as builder
 
 WORKDIR /app
 
-COPY ./* /app/
+COPY . . 
 
 ENV GO111MODULE=auto
 ENV GOPROXY=http://goproxy.cn
@@ -13,13 +13,13 @@ RUN go mod tidy && \
 	chmod +x air-ticket 
 
 # runner
-FROM registry.cn-shenzhen.aliyuncs.com/fdz/golang-alpine-chrome:v1.0.0
+FROM alpine:3.19
 
 ARG SERVICE_NAME
 
 WORKDIR /app
 COPY --from=builder /app/air-ticket /usr/local/bin/air-ticket 
-COPY --from=builder /app/config.yaml /app/config.yaml
+COPY --from=builder /app/config.yaml /app/conf/config.yaml
 
-ENTRYPOINT ["air-ticket", "-f", "/app/config.yaml"]
+ENTRYPOINT ["air-ticket", "-f", "/app/conf/config.yaml"]
 
