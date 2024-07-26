@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"text/template"
+	"time"
 
 	"github.com/go-puzzles/plog"
 	"github.com/pkg/errors"
@@ -137,6 +138,13 @@ func (s *SpiderWorker) doCrawl(ctx context.Context, ac domains.SpiderSource, rul
 }
 
 func (s *SpiderWorker) Run(ctx context.Context) error {
+	now := time.Now()
+
+	if now.Hour() >= 23 || now.Hour() < 9 {
+		plog.Warnc(ctx, "worker will stop between 23:00 to 9:00")
+		return nil
+	}
+
 	spiderGroup := s.crawlGroup()
 
 	grp, ctx := errgroup.WithContext(ctx)
